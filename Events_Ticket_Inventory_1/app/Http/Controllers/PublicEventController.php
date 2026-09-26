@@ -62,13 +62,13 @@ class PublicEventController extends Controller
         // Filter by ticket price
         if ($request->filled('min_price')) {
             $query->whereHas('ticketTypes', function ($q) use ($request) {
-                $q->where('price', '>=', $request->min_price);
+                $q->whereRaw('ROUND(base_price * (100 - discount) / 100, 0) >= ?', [$request->min_price]);
             });
         }
 
         if ($request->filled('max_price')) {
             $query->whereHas('ticketTypes', function ($q) use ($request) {
-                $q->where('price', '<=', $request->max_price);
+                $q->whereRaw('ROUND(base_price * (100 - discount) / 100, 0) <= ?', [$request->max_price]);
             });
         }
 
@@ -76,24 +76,20 @@ class PublicEventController extends Controller
             ->latest('date')
             ->paginate(20);
             
-          $events->getCollection()->transform(function ($event) {
+        $events->getCollection()->transform(function ($event) {
+            $event->ticketTypes->each(function ($ticketType) {
 
-    $event->ticketTypes->each(function ($ticketType) {
+                $ticketType->remaining =
+                    $ticketType->quantity
+                    - ($ticketType->confirmed_holds ?? 0)
+                    - ($ticketType->active_holds ?? 0);
+            });
 
-        $ticketType->remaining =
-            $ticketType->quantity
-            - ($ticketType->confirmed_holds ?? 0)
-            - ($ticketType->active_held_holds ?? 0);
-    });
-
-    return $event;
-    });
+            return $event;
+        });
 
         return response()->json([
             'events' => $events
-
         ]);
-
-        
     }
 }

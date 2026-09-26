@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use App\Models\Hold;
 use App\Services\EventService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
@@ -31,38 +29,23 @@ class EventController extends Controller
             'start_time' => ['required', 'date_format:H:i'],
         ]);
 
-        $event = $eventService->createEvent($request, $validated);
+        $event = $eventService->createEvent($request->user(), $validated);
 
         return response()->json([
             'message' => 'Event successfully created',
-            'event' => $event['event']
+            'event' => $event,
         ], 201);
     }
 
-    public function show(Request $request, Event $event)
+    public function show(Request $request, Event $event, EventService $eventService)
     {
-            
-        if ($event->organizer_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         return response()->json([
-            'event' => $event
+            'event' => $eventService->showEvent($event, $request->user()->id),
         ]);
     }
 
     public function update(Request $request, Event $event, EventService $eventService)
     {
-        if ($event->organizer_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        if ($event->status === 'cancelled') {
-            return response()->json([
-                'message' => "You can't edit a cancelled event"
-            ], 422);
-        }
-
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'string'],
@@ -72,43 +55,19 @@ class EventController extends Controller
             'start_time' => ['sometimes', 'date_format:H:i']
         ]);
 
-        $event = $eventService->updateEvent($event, $validated);
+        $event = $eventService->updateEvent($event, $request->user()->id, $validated);
 
         return response()->json([
-            'event' => $event['event']
+            'event' => $event,
         ]);
     }
 
-   public function cancel(Request $request, Event $event)
-{
-    if ($event->organizer_id !== $request->user()->id) {
+    public function cancel(Request $request, Event $event, EventService $eventService)
+    {
+        $eventService->cancelEvent($event, $request->user()->id);
+
         return response()->json([
-            'message' => 'Unauthorized'
-        ], 403);
-    }
-
-    if ($event->status === 'cancelled') {
-        return response()->json([
-            'message' => 'Event is already cancelled'
-        ], 422);
-    }
-
-    DB::transaction(function () use ($event) {
-
-
-    Hold::whereIn('ticket_type_id', $event->ticketTypes()->select('id'))
-    ->where('status', 'held')
-    ->where('expires_at', '>', now())
-    ->lockForUpdate() 
-    ->update(['status' => 'released']);
-
-        $event->update([
-            'status' => 'cancelled'
+            'message' => 'Event cancelled successfully',
         ]);
-    });
-
-    return response()->json([
-        'message' => 'Event cancelled successfully'
-    ]);
-}
+    }
 }

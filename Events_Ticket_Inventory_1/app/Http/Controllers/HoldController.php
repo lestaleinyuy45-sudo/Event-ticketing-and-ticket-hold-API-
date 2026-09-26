@@ -35,51 +35,51 @@ class HoldController extends Controller
     }
 
     public function release(Request $request, HoldService $holdService, $holdid) {
-    $validated = $request->validate([
-        'token' => ['required', 'string'],
-    ]);
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+        ]);
 
-    try {
+        try {
 
-        $holdService->releaseHold(
-            $validated['token'],
-            (int) $holdid
-        );
+            $holdService->releaseHold(
+                $validated['token'],
+                (int) $holdid
+            );
 
-        return response()->json([
-            'message' => 'Hold released successfully.',
-        ], 200);
+            return response()->json([
+                'message' => 'Hold released successfully.',
+            ], 200);
 
-    } catch (RuntimeException $e) {
+        } catch (RuntimeException $e) {
 
-        return response()->json([
-            'message' => $e->getMessage(),
-        ], 422);
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
-}
 
     public function confirm(Request $request,HoldService $holdService,$holdid) {
-    $validated = $request->validate([
-        'token' => ['required', 'string'],
-    ]);
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+        ]);
 
-    try {
+        try {
 
-        $holdService->confirmHold(
-            $validated['token'],
-            (int) $holdid
-        );
+            $holdService->confirmHold(
+                $validated['token'],
+                (int) $holdid
+            );
 
-        return response()->json([
-            'message' => 'Hold confirmed successfully.',
-        ], 200);
+            return response()->json([
+                'message' => 'Hold confirmed successfully.',
+            ], 200);
 
-    } catch (RuntimeException $e) {
+        } catch (RuntimeException $e) {
 
-        return response()->json([
-            'message' => $e->getMessage(),
-        ], 422);
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
-}
 
 }

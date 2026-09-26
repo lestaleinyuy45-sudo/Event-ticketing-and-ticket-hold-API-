@@ -15,17 +15,28 @@ class HoldConcurrencyTest extends TestCase
 
     public function test_concurrent_holds_cannot_oversell_tickets(): void
     {
-        $organizer = User::factory()->create([
+        $organizer = User::create([
+            'name' => 'Concurrency Organizer',
+            'email' => 'concurrency-organizer@example.test',
+            'password' => 'password',
             'role' => 'organizer',
         ]);
 
-        $event = Event::factory()->create([
+        $event = Event::create([
             'organizer_id' => $organizer->id,
+            'title' => 'Concurrency Event',
             'status' => 'published',
+            'venue' => 'Test Venue',
+            'town' => 'Test Town',
+            'description' => 'Concurrency test event',
+            'date' => now()->addWeek()->toDateString(),
+            'start_time' => '18:00:00',
         ]);
 
-        $ticketType = TicketType::factory()->create([
+        $ticketType = TicketType::create([
             'event_id' => $event->id,
+            'name' => 'General Admission',
+            'price' => 25,
             'quantity' => 5,
         ]);
 
